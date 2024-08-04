@@ -1,7 +1,12 @@
 package com.example.yakbangapp.network
 
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+
 object RetrofitInstance {
-    private const val BASE_URL = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/"  >>"http://apis.data.go.kr/1471000/DrbEasyDrugInfoService/"
+    private const val BASE_URL = "http://apis.data.go.kr/1471000/DrbEasyDrugInfoService"
     private val retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
@@ -14,5 +19,5 @@ object RetrofitInstance {
             .build()
     }
 
-    val service: WeatherService by lazy { retrofit.create(WeatherService::class.java) } >> YakService로 이름 바꾸기
+    val service: YakService by lazy { retrofit.create(YakService::class.java) }
 }
