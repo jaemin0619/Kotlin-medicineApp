@@ -2,6 +2,7 @@ package com.example.yakbangapp.ui.detail
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.example.yakbangapp.databinding.DetailItemLayoutBinding
 
 class DetailAdapter(val detailList: List<String>) : RecyclerView.Adapter<DetailAdapter.ItemViewHolder>() {
 
