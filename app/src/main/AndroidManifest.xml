@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.example.yakbangapp">
+
+    <!-- 인터넷 권한 -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 카메라 권한 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="true" />
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -13,16 +19,40 @@
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.YakBangApp"
         tools:targetApi="31">
+
+        <!-- 카카오 SDK 앱 키 -->
+        <meta-data
+            android:name="com.kakao.sdk.AppKey"
+            android:value="b5179c6395c6c6dc6dbc677be8a8a4db" />
+
+        <!-- LoginActivity: 앱 시작 지점 -->
         <activity
-            android:name=".MainActivity"
+            android:name=".LoginActivity"
             android:exported="true"
             android:theme="@style/Theme.YakBangApp">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-    </application>
 
+        <!-- 검색 선택 화면 (로그인 성공 후 진입) -->
+        <activity
+            android:name=".SearchOptionActivity"
+            android:exported="true" />
+
+        <!-- 텍스트 검색용 메인화면 -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true" />
+
+        <!-- 사진 촬영 검색용 화면 -->
+        <activity
+            android:name=".CameraSearchActivity"
+            android:exported="true" />
+
+        <!-- 복약 중인 알약 (선택사항) -->
+         <activity android:name=".ui.MyMedsActivity" android:exported="true" />
+
+    </application>
 </manifest>

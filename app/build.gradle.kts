@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.yakbangapp"
-        minSdk = 34
+        minSdk = 29
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -37,6 +37,7 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    buildToolsVersion = "34.0.0"
 }
 
 dependencies {
@@ -48,10 +49,12 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation("com.github.bumptech.glide:glide:4.14.0")
+    implementation(libs.androidx.junit.ktx)
     annotationProcessor("com.github.bumptech.glide:compiler:4.14.0")
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
+    implementation("com.kakao.sdk:v2-user:2.18.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

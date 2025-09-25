@@ -20,7 +20,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="32dp"
             android:layout_marginVertical="40dp"
-            android:text="약방"
+            android:text="Medifit"
             android:textColor="#FFFFFF"
             android:textSize="28sp"
             android:textStyle="bold"

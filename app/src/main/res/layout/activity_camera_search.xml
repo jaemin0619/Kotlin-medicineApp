@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <ImageView
+        android:id="@+id/preview_image"
+        android:layout_width="match_parent"
+        android:layout_height="400dp"
+        android:contentDescription="촬영 이미지 미리보기"
+        android:scaleType="centerCrop"
+        android:background="#e0e0e0" />
+
+    <Button
+        android:id="@+id/button_process"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="인식 처리 페이지로 이동"
+        android:layout_marginTop="16dp" />
+</LinearLayout>

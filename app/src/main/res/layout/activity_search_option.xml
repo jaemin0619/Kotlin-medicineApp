@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="32dp"
+    android:gravity="center"
+    android:background="@android:color/white">
+
+    <Button
+        android:id="@+id/button_text_search"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="텍스트로 검색"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/button_camera_search"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="사진 촬영으로 검색"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/button_my_meds"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="복약 중인 알약" />
+
+</LinearLayout>
