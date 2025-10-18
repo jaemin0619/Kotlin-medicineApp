@@ -1,27 +1,32 @@
-package com.example.yakbangapp
+package com.example.yakbangapp.ui.mymeds
 
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
-import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
-import com.example.yakbangapp.databinding.ActivityMyMedsBinding
-import com.example.yakbangapp.ui.mymeds.MedListAdapter
-import com.example.yakbangapp.ui.mymeds.MyMedsViewModel
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import com.example.yakbangapp.databinding.FragmentMyMedsBinding
 
-class MyMedsActivity : AppCompatActivity() {
+class MyMedsFragment : Fragment() {
 
-    private lateinit var binding: ActivityMyMedsBinding
+    private var _binding: FragmentMyMedsBinding? = null
+    private val binding get() = _binding!!
+
     private val vm by viewModels<MyMedsViewModel>()
     private lateinit var adapter: MedListAdapter
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityMyMedsBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentMyMedsBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // Recycler + Adapter
         adapter = MedListAdapter(
             onToggleTaken = { med, checked -> vm.toggleTaken(med, checked) },
@@ -30,14 +35,14 @@ class MyMedsActivity : AppCompatActivity() {
         binding.medList.adapter = adapter
 
         // Observe
-        vm.meds.observe(this) { adapter.submitList(it) }
+        vm.meds.observe(viewLifecycleOwner) { adapter.submitList(it) }
 
         // FAB Add
         binding.fabAddMed.setOnClickListener { showAddDialog() }
     }
 
     private fun showAddDialog() {
-        val ctx = this
+        val ctx = requireContext()
         val container = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(48, 24, 48, 8)
@@ -47,7 +52,7 @@ class MyMedsActivity : AppCompatActivity() {
         val etSched = EditText(ctx).apply { hint = "스케줄 (예: 아침/저녁 · 식후 30분)" }
         container.addView(etName); container.addView(etDose); container.addView(etSched)
 
-        AlertDialog.Builder(ctx)
+        androidx.appcompat.app.AlertDialog.Builder(ctx)
             .setTitle("복약 추가")
             .setView(container)
             .setPositiveButton("추가") { _, _ ->
@@ -59,5 +64,10 @@ class MyMedsActivity : AppCompatActivity() {
             }
             .setNegativeButton("취소", null)
             .show()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

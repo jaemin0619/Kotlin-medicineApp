@@ -10,37 +10,44 @@ import com.example.yakbangapp.R
 import com.example.yakbangapp.databinding.LayoutItemBinding
 import com.example.yakbangapp.ui.data.YakData
 
-class DataListAdapter(private val onClickAction: (data: YakData) -> Unit) :
-    ListAdapter<YakData, DataListAdapter.YakItemViewHolder>(object :
-        DiffUtil.ItemCallback<YakData>() {
+class DataListAdapter(
+    private val onClickAction: (data: YakData) -> Unit
+) : ListAdapter<YakData, DataListAdapter.YakItemViewHolder>(Diff) {
+
+    object Diff : DiffUtil.ItemCallback<YakData>() {
         override fun areItemsTheSame(oldItem: YakData, newItem: YakData): Boolean {
             return oldItem.productCode == newItem.productCode
         }
-
         override fun areContentsTheSame(oldItem: YakData, newItem: YakData): Boolean {
             return oldItem == newItem
         }
+    }
 
-    }) {
-
-    inner class YakItemViewHolder(binding: LayoutItemBinding) :
+    inner class YakItemViewHolder(private val binding: LayoutItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
-        private val thumbnailView = binding.yakIv
-        private val nameView = binding.yakNameTv
-        private val codeView = binding.yakCodeTv
-        private val vendorView = binding.yakVendorTv
 
-        fun bind(data: YakData) {
-            with(data) {
-                Glide.with(itemView).load(imageUrl).placeholder(R.drawable.ic_dia)
-                    .into(thumbnailView)
-                nameView.text = productName
-                codeView.text = productCode
-                vendorView.text = companyName
-                itemView.setOnClickListener { onClickAction(data) }
+        fun bind(data: YakData) = with(binding) {
+            // 텍스트
+            yakNameTv.text = data.productName
+            yakCodeTv.text = data.productCode
+            yakVendorTv.text = data.companyName
+
+            // ⭐ 재활용 잔상/Glide null 방지: 항상 먼저 clear()
+            Glide.with(yakIv).clear(yakIv)
+
+            val url = data.imageUrl
+            if (!url.isNullOrBlank()) {
+                Glide.with(yakIv)
+                    .load(url)
+                    .placeholder(R.drawable.ic_dia) // 필요 시 교체
+                    .error(R.drawable.ic_dia)       // 필요 시 교체
+                    .into(yakIv)
+            } else {
+                yakIv.setImageResource(R.drawable.ic_dia)
             }
-        }
 
+            root.setOnClickListener { onClickAction(data) }
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): YakItemViewHolder {
@@ -51,5 +58,4 @@ class DataListAdapter(private val onClickAction: (data: YakData) -> Unit) :
     override fun onBindViewHolder(holder: YakItemViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
-
 }

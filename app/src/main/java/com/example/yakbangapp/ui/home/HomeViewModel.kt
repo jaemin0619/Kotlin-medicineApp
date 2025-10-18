@@ -22,9 +22,11 @@ class HomeViewModel(private val repository: YakRepository = YakRepository()) : V
             runCatching {
                 repository.getYakInfo(category, query)
             }.onSuccess {
+                val newList=it.toYakDataList()?: emptyList()
                 _yakDataList.value = it.toYakDataList()
             }.onFailure {
                 Log.e(TAG, "getYakList() failed! : $it")
+                _yakDataList.value= emptyList()
                 if (it is HttpException) {
                     val errorJsonString = it.response()?.errorBody()?.string()
                     Log.e(TAG, "getYakList() failed! : $errorJsonString")

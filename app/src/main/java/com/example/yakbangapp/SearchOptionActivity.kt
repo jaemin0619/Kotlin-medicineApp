@@ -9,8 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.yakbangapp.databinding.ActivitySearchOptionBinding
-import com.example.yakbangapp.MyMedsActivity
-
+import com.example.yakbangapp.ui.mypage.MyPageActivity
 class SearchOptionActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySearchOptionBinding
@@ -32,8 +31,8 @@ class SearchOptionActivity : AppCompatActivity() {
         }
 
         // 복약 관리 → MyMedsActivity
-        binding.buttonMyMeds.setOnClickListener {
-            startActivity(Intent(this, MyMedsActivity::class.java))
+        binding.buttonMyPage.setOnClickListener {
+            startActivity(Intent(this, MyPageActivity::class.java))
         }
     }
 

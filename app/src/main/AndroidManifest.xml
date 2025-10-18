@@ -74,7 +74,7 @@
             android:exported="true" />
 
         <activity
-            android:name=".MyMedsActivity"
+            android:name=".ui.mypage.MyPageActivity"
             android:exported="true" />
 
         <activity
