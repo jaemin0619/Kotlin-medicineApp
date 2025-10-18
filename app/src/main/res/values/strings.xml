@@ -4,9 +4,15 @@
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">First Fragment</string>
     <string name="second_fragment_label">Second Fragment</string>
+    <string name="menu_mypage">마이페이지</string>
+    <string name="menu_logout">로그아웃</string>
     <string name="next">Next</string>
-    <string name="previous">Previous</string>
 
+    <string name="previous">Previous</string>
+    <string name="start">시작</string>
+    <string name="open">열기</string>
+    <string name="add_med">복약 추가</string>
+    <string name="delete">삭제</string>
     <string name="lorem_ipsum">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris
         volutpat, dolor id interdum ullamcorper, risus dolor egestas lectus, sit amet mattis purus

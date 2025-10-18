@@ -1,10 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.example.yakbangapp.MainActivity">
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
     <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="100"
-        android:title="@string/action_settings"
-        app:showAsAction="never" />
+        android:id="@+id/action_mypage"
+        android:title="@string/menu_mypage"
+        android:icon="@drawable/ic_person_24"
+        app:showAsAction="ifRoom|withText" />
+
+    <item
+        android:id="@+id/action_logout"
+        android:title="@string/menu_logout"
+        android:icon="@drawable/ic_logout_24"
+        app:showAsAction="ifRoom|withText" />
 </menu>

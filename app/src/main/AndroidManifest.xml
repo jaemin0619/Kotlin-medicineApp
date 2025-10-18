@@ -3,11 +3,18 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.yakbangapp">
 
-    <!-- 인터넷 권한 -->
+    <!-- 🔎 Android 11+에서 카카오톡 설치 여부 확인을 위해 패키지 가시성 선언 -->
+    <queries>
+        <package android:name="com.kakao.talk" />
+    </queries>
+
+    <!-- 인터넷/카메라 권한 -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- 카메라 권한 -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera" android:required="true" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="true" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -20,19 +27,32 @@
         android:theme="@style/Theme.YakBangApp"
         tools:targetApi="31">
 
-        <!-- 카카오 SDK 앱 키 -->
+        <!-- Kakao SDK App Key (이걸로 자동 초기화됨) -->
         <meta-data
             android:name="com.kakao.sdk.AppKey"
             android:value="b5179c6395c6c6dc6dbc677be8a8a4db" />
 
-        <!-- LoginActivity: 앱 시작 지점 -->
+        <!-- LoginActivity: 런처 + 카카오 OAuth 콜백 스킴 처리 -->
         <activity
             android:name=".LoginActivity"
             android:exported="true"
             android:theme="@style/Theme.YakBangApp">
+
+            <!-- 앱 실행 진입 -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- 카카오 로그인 콜백 (반드시 네이티브 앱 키 그대로 사용) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- 예시: kakaob5179c6395c6c6dc6dbc677be8a8a4db://oauth -->
+                <data
+                    android:scheme="kakaob5179c6395c6c6dc6dbc677be8a8a4db"
+                    android:host="oauth" />
             </intent-filter>
         </activity>
 
@@ -52,7 +72,25 @@
             android:exported="true" />
 
         <!-- 복약 중인 알약 (선택사항) -->
-         <activity android:name=".ui.MyMedsActivity" android:exported="true" />
+        <activity
+            android:name=".MyMedsActivity"
+            android:exported="true" />
+
+        <!-- OCR 결과 화면 -->
+        <activity
+            android:name=".RecognitionResultActivity"
+            android:exported="true" />
+
+        <!-- 📷 FileProvider -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 </manifest>

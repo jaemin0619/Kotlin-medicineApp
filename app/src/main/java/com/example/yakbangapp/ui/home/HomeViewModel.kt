@@ -18,6 +18,8 @@ class HomeViewModel(private val repository: YakRepository = YakRepository()) : V
     val yakDataList get() = _yakDataList
 
     fun getYakList(category: Category, query: String) {
+        Log.d("HomeViewModel", "🔍 getYakList called: category=${category}, query=$query")
+
         viewModelScope.launch {
             runCatching {
                 repository.getYakInfo(category, query)
