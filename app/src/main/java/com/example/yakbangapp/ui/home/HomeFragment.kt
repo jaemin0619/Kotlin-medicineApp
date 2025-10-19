@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.TextView
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -15,6 +16,7 @@ import com.example.yakbangapp.R
 import com.example.yakbangapp.databinding.FragmentHomeBinding
 import com.example.yakbangapp.repository.Category
 import com.example.yakbangapp.ui.detail.DetailFragment
+import com.google.android.material.chip.ChipGroup
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
@@ -49,24 +51,40 @@ class HomeFragment : Fragment() {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
 
         with(binding) {
-            // RecyclerView 기본 셋업
+            // RecyclerView
             yakList.layoutManager = LinearLayoutManager(requireContext())
             yakList.adapter = adapter
             yakList.setHasFixedSize(true)
 
-            chipProductName.isChecked = true
+            // ✅ ChipGroup 기본 선택(그룹 API로 설정해야 checkedChipId가 유효)
+            chipGroup.check(R.id.chip_product_name)
+            updateHintForCategory(categoryFrom(chipGroup.checkedChipId))
+
+            // ✅ ChipGroup 선택 변경 리스너
+            chipGroup.setOnCheckedStateChangeListener(
+                ChipGroup.OnCheckedStateChangeListener { group, checkedIds ->
+                    val id = checkedIds.firstOrNull() ?: return@OnCheckedStateChangeListener
+                    val cat = categoryFrom(id)
+                    updateHintForCategory(cat)
+
+                    // 현재 입력값이 있으면 즉시 재검색
+                    val q = searchView.query?.toString()?.trim().orEmpty()
+                    if (q.isNotEmpty()) {
+                        viewModel.getYakList(cat, q)
+                    }
+                }
+            )
 
             // SearchView 설정
             searchView.apply {
                 setIconifiedByDefault(false)
                 isIconified = false
-                queryHint = "제품명/업체/효능으로 검색"
+                // 처음 힌트는 chipGroup.check에서 이미 설정됨
 
                 // 엔터(돋보기) 액션 강제
-                val searchText =
-                    findViewById<SearchView.SearchAutoComplete>(
-                        androidx.appcompat.R.id.search_src_text
-                    )
+                val searchText = binding.searchView.findViewById<TextView>(
+                    androidx.appcompat.R.id.search_src_text
+                )
                 searchText.imeOptions = EditorInfo.IME_ACTION_SEARCH
                 searchText.setOnEditorActionListener { _, actionId, _ ->
                     if (actionId == EditorInfo.IME_ACTION_SEARCH) {
@@ -80,7 +98,9 @@ class HomeFragment : Fragment() {
                         submitSearch()
                         return true
                     }
-                    override fun onQueryTextChange(newText: String?) = true
+
+                    // 필요 시 여기서 실시간 검색 가능: return true → 소비 / false → 기본 처리
+                    override fun onQueryTextChange(newText: String?) = false
                 })
 
                 // 클릭 시 확장 + 포커스 + 키보드
@@ -102,7 +122,7 @@ class HomeFragment : Fragment() {
             }
         }
 
-        // 초기 로드(원하지 않으면 지워도 됨)
+        // (선택) 초기 로드 — 필요 없다면 주석 처리하세요
         viewModel.getYakList(Category.Efficacy, "감기")
 
         // 단 1회 submit + 새 리스트 인스턴스 전달
@@ -117,10 +137,28 @@ class HomeFragment : Fragment() {
     private fun submitSearch() {
         val q = binding.searchView.query?.toString()?.trim().orEmpty()
         if (q.isEmpty()) return
-        val queryCategory = categoryMap[binding.chipGroup.checkedChipId] ?: Category.ProductName
+
+        val queryCategory = categoryFrom(binding.chipGroup.checkedChipId)
         viewModel.getYakList(queryCategory, q)
+
         binding.searchView.hideKeyboard()
         binding.searchView.clearFocus()
+    }
+
+    private fun categoryFrom(id: Int): Category {
+        return categoryMap[id] ?: Category.ProductName
+    }
+
+    private fun updateHintForCategory(category: Category) {
+        val hint = when (category) {
+            Category.ProductName  -> "제품명으로 검색"
+            Category.CompanyName  -> "업체명으로 검색"
+            Category.Efficacy     -> "효능으로 검색"
+            Category.SideEffects  -> "부작용으로 검색"
+            Category.Interactions -> "상호작용으로 검색"
+            else                  -> "키워드로 검색" // ✅ 나머지 분기 커버
+        }
+        binding.searchView.queryHint = hint
     }
 
     override fun onDestroyView() {

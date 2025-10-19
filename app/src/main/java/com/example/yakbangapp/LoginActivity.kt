@@ -1,110 +1,93 @@
-package com.example.yakbangapp
+package com.example.yakbangapp.ui.auth
 
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Base64
-import android.util.Log
-import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.example.yakbangapp.auth.UserProfile
+import com.example.yakbangapp.auth.UserSession
+import com.example.yakbangapp.databinding.ActivityLoginBinding
+import com.example.yakbangapp.SearchOptionActivity
 import com.kakao.sdk.auth.model.OAuthToken
-import com.kakao.sdk.common.util.Utility
 import com.kakao.sdk.user.UserApiClient
-import java.security.MessageDigest
+import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
-
-    private val TAG = "KakaoLogin"
+    private lateinit var binding: ActivityLoginBinding
+    private lateinit var session: UserSession
+    private var alreadyNavigated = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_login)   // ✅ 먼저 화면 세팅
+        binding = ActivityLoginBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        session = UserSession(this)
 
-        // 기존 세션 검증: 있으면 바로 다음 화면
-        UserApiClient.instance.accessTokenInfo { tokenInfo, error ->
-            if (error == null && tokenInfo != null) {
-                goNext()
-            } else {
-                logKeyHash()
-                initLoginButton()
-            }
-        }
+        binding.btnKakaoLogin.setOnClickListener { loginWithKakao() }
     }
 
-    private fun initLoginButton() {
-        // ✅ activity_login.xml 내부에 @+id/kakao_login_button 버튼이 있어야 합니다.
-        findViewById<Button>(R.id.kakao_login_button).setOnClickListener {
-            loginWithKakaoTalkOrFallback()
-        }
-    }
-
-    /** 카카오톡 설치 시 톡 우선 → 실패 시 카카오계정(브라우저)로 폴백 */
-    private fun loginWithKakaoTalkOrFallback() {
-        val api = UserApiClient.instance
-
-        val doAccount: () -> Unit = {
-            api.loginWithKakaoAccount(this) { token, error ->
-                when {
-                    error != null -> {
-                        Log.e(TAG, "[Account] ${error::class.java.name}: ${error.localizedMessage}", error)
-                        Toast.makeText(this, "카카오계정 로그인 실패: ${error.localizedMessage}", Toast.LENGTH_SHORT).show()
-                    }
-                    token != null -> onLoginSuccess(token)
-                }
-            }
-        }
-
-        if (api.isKakaoTalkLoginAvailable(this)) {
-            api.loginWithKakaoTalk(this) { token, error ->
-                when {
-                    token != null -> onLoginSuccess(token)
-                    error != null -> {
-                        Log.w(TAG, "[Talk] ${error::class.java.name}: ${error.localizedMessage}", error)
-                        // 사용자가 취소했는지, 다른 오류인지와 무관하게 계정 로그인 폴백
-                        doAccount()
-                    }
+    private fun loginWithKakao() {
+        val userApi = UserApiClient.instance
+        if (userApi.isKakaoTalkLoginAvailable(this)) {
+            userApi.loginWithKakaoTalk(this) { token, error ->
+                if (error != null) {
+                    loginWithKakaoAccount()
+                } else if (token != null) {
+                    fetchMeAndProceed(token)
                 }
             }
         } else {
-            doAccount()
+            loginWithKakaoAccount()
         }
     }
 
-    private fun onLoginSuccess(token: OAuthToken) {
-        toast("로그인 성공!")
-        // 사용자 정보 확인(선택)
-        UserApiClient.instance.me { user, err ->
-            if (err != null) {
-                Log.w(TAG, "me() error: ${err.localizedMessage}", err)
-            } else {
-                Log.d(TAG, "user id=${user?.id}, email=${user?.kakaoAccount?.email}")
+    private fun loginWithKakaoAccount() {
+        UserApiClient.instance.loginWithKakaoAccount(this) { token, error ->
+            if (error != null) {
+                Toast.makeText(this, "로그인 실패: ${error.message}", Toast.LENGTH_SHORT).show()
+            } else if (token != null) {
+                fetchMeAndProceed(token)
             }
         }
-        goNext()
     }
 
-    private fun goNext() {
-        startActivity(Intent(this, SearchOptionActivity::class.java))
-        finish()
-    }
-
-    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-
-    /** 키해시 로그 (Kakao Developers 콘솔 등록용) */
-    private fun logKeyHash() {
-        val hash1 = Utility.getKeyHash(this)
-        Log.d("KeyHash", "Utility.getKeyHash: $hash1")
-        try {
-            val info = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
-            info.signingInfo.apkContentsSigners.forEach { sig ->
-                val md = MessageDigest.getInstance("SHA")
-                md.update(sig.toByteArray())
-                val keyHash = Base64.encodeToString(md.digest(), Base64.NO_WRAP)
-                Log.d("KeyHash", "manual: $keyHash")
+    private fun fetchMeAndProceed(oauth: OAuthToken) {
+        UserApiClient.instance.me { user, error ->
+            if (error != null || user == null) {
+                Toast.makeText(this, "사용자 정보 조회 실패", Toast.LENGTH_SHORT).show()
+                return@me
             }
-        } catch (e: Exception) {
-            Log.e("KeyHash", "calc error: ${e.message}")
+
+            val account = user.kakaoAccount
+            val profile = account?.profile
+            val p = UserProfile(
+                id = user.id?.toString().orEmpty(),
+                name = profile?.nickname.orEmpty(),
+                email = account?.email.orEmpty(),
+                avatarUrl = profile?.thumbnailImageUrl.orEmpty(),
+                provider = "kakao"
+            )
+
+            lifecycleScope.launch {
+                // 1) 세션 저장(프로필 + 토큰)
+                session.save(p)
+                session.saveKakaoTokens(
+                    accessToken = oauth.accessToken,
+                    refreshToken = oauth.refreshToken.orEmpty(),
+                    expiresAt = oauth.accessTokenExpiresAt?.time ?: 0L
+                )
+
+                // 2) 중복 네비 차단
+                if (alreadyNavigated) return@launch
+                alreadyNavigated = true
+
+                // 3) SearchOptionActivity로 이동(스택 클리어)
+                startActivity(Intent(this@LoginActivity, SearchOptionActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                })
+                finish()
+            }
         }
     }
 }

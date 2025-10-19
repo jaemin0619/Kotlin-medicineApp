@@ -8,9 +8,12 @@
     <string name="menu_logout">로그아웃</string>
     <string name="next">Next</string>
     <string name="add">추가</string>
-
+    <string name="kakao_native_app_key">b5179c6395c6c6dc6dbc677be8a8a4db</string>
+    <string name="logout">로그아웃</string>
+    <string name="back">뒤로가기</string>
     <string name="previous">Previous</string>
     <string name="start">시작</string>
+    <string name="login_required_short">로그인 필요</string>
     <string name="open">열기</string>
     <string name="add_med">복약 추가</string>
     <string name="delete">삭제</string>

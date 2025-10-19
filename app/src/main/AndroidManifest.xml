@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.example.yakbangapp">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- 🔎 Android 11+ 패키지 가시성: 카카오톡 설치 여부 확인 -->
     <queries>
@@ -28,14 +27,15 @@
         android:theme="@style/Theme.YakBangApp"
         tools:targetApi="31">
 
-        <!-- ✅ Kakao SDK 자동 초기화 (직접 KakaoSdk.init() 호출 중이면 이 meta-data는 제거) -->
+        <!-- ✅ Kakao SDK 앱키: (직접 KakaoSdk.init() 호출 중이어도 유지 가능) -->
+        <!-- 보안상 실제 배포 시에는 strings.xml 로 분리 권장 -->
         <meta-data
             android:name="com.kakao.sdk.AppKey"
             android:value="b5179c6395c6c6dc6dbc677be8a8a4db" />
 
-        <!-- ✅ 런처 전용 LoginActivity (스킴/VIEW intent-filter 제거) -->
+        <!-- ✅ 런처: 로그인 액티비티 (패키지 경로는 실제 클래스에 맞춰 조정) -->
         <activity
-            android:name=".LoginActivity"
+            android:name=".ui.auth.LoginActivity"
             android:exported="true"
             android:theme="@style/Theme.YakBangApp">
             <intent-filter>
@@ -44,7 +44,7 @@
             </intent-filter>
         </activity>
 
-        <!-- ✅ 카카오 인증 콜백 수신용 (SDK 내부 액티비티) -->
+        <!-- ✅ 카카오 인증 콜백 (SDK 내부) -->
         <activity
             android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
             android:exported="true">
@@ -52,7 +52,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- 네이티브 앱 키를 소문자 그대로 scheme에 붙임 -->
+                <!-- 네이티브 앱 키를 그대로 scheme에 붙임 (모두 소문자) -->
                 <!-- 예: kakaob5179c6395c6c6dc6dbc677be8a8a4db://oauth -->
                 <data
                     android:scheme="kakaob5179c6395c6c6dc6dbc677be8a8a4db"
@@ -60,28 +60,24 @@
             </intent-filter>
         </activity>
 
-        <!-- 로그인 후 진입 화면들 -->
+        <!-- ✅ 로그인 이후 들어가는 화면들 -->
         <activity
             android:name=".SearchOptionActivity"
             android:exported="true" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true" />
-
         <activity
             android:name=".CameraSearchActivity"
             android:exported="true" />
-
         <activity
             android:name=".ui.mypage.MyPageActivity"
             android:exported="true" />
-
         <activity
             android:name=".RecognitionResultActivity"
             android:exported="true" />
 
-        <!-- 📷 FileProvider -->
+        <!-- 📷 FileProvider (카메라 촬영 결과 파일 공유용) -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
