@@ -15,8 +15,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.yakbangapp.R
 import com.example.yakbangapp.databinding.FragmentHomeBinding
 import com.example.yakbangapp.repository.Category
+import com.example.yakbangapp.ui.data.YakData
 import com.example.yakbangapp.ui.detail.DetailFragment
 import com.google.android.material.chip.ChipGroup
+import com.google.android.material.snackbar.Snackbar
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
@@ -27,11 +29,7 @@ class HomeFragment : Fragment() {
 
     private val adapter by lazy {
         DataListAdapter { data ->
-            detailFragment.arguments = Bundle().apply { putParcelable("yak_data", data) }
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, detailFragment)
-                .addToBackStack(null)
-                .commit()
+            openDetail(data)
         }
     }
 
@@ -42,6 +40,9 @@ class HomeFragment : Fragment() {
         R.id.chip_side_effect to Category.SideEffects,
         R.id.chip_interaction to Category.Interactions
     )
+
+    // ✅ 검색 제출 후 결과 도착 시 상세로 이동할지 여부
+    private var navigateOnSubmit = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -56,61 +57,54 @@ class HomeFragment : Fragment() {
             yakList.adapter = adapter
             yakList.setHasFixedSize(true)
 
-            // ✅ ChipGroup 기본 선택(그룹 API로 설정해야 checkedChipId가 유효)
+            // 기본 Chip 선택 및 힌트 반영
             chipGroup.check(R.id.chip_product_name)
             updateHintForCategory(categoryFrom(chipGroup.checkedChipId))
 
-            // ✅ ChipGroup 선택 변경 리스너
+            // ChipGroup 선택 변경 → 힌트 갱신 + 현재 쿼리로 즉시 재검색
             chipGroup.setOnCheckedStateChangeListener(
-                ChipGroup.OnCheckedStateChangeListener { group, checkedIds ->
+                ChipGroup.OnCheckedStateChangeListener { _, checkedIds ->
                     val id = checkedIds.firstOrNull() ?: return@OnCheckedStateChangeListener
                     val cat = categoryFrom(id)
                     updateHintForCategory(cat)
 
-                    // 현재 입력값이 있으면 즉시 재검색
-                    val q = searchView.query?.toString()?.trim().orEmpty()
+                    val raw = searchView.query?.toString().orEmpty()
+                    val q = cleaned(raw)
                     if (q.isNotEmpty()) {
                         viewModel.getYakList(cat, q)
                     }
                 }
             )
 
-            // SearchView 설정
+            // SearchView
             searchView.apply {
                 setIconifiedByDefault(false)
                 isIconified = false
-                // 처음 힌트는 chipGroup.check에서 이미 설정됨
 
-                // 엔터(돋보기) 액션 강제
-                val searchText = binding.searchView.findViewById<TextView>(
-                    androidx.appcompat.R.id.search_src_text
-                )
+                // 엔터 액션
+                val searchText = findViewById<TextView>(androidx.appcompat.R.id.search_src_text)
                 searchText.imeOptions = EditorInfo.IME_ACTION_SEARCH
                 searchText.setOnEditorActionListener { _, actionId, _ ->
                     if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                        submitSearch()
+                        submitSearch(navigate = true)
                         true
                     } else false
                 }
 
                 setOnQueryTextListener(object : SearchView.OnQueryTextListener {
                     override fun onQueryTextSubmit(query: String?): Boolean {
-                        submitSearch()
+                        submitSearch(navigate = true) // ✅ 제출 → 상세로 진입 예약
                         return true
                     }
-
-                    // 필요 시 여기서 실시간 검색 가능: return true → 소비 / false → 기본 처리
                     override fun onQueryTextChange(newText: String?) = false
                 })
 
-                // 클릭 시 확장 + 포커스 + 키보드
                 setOnClickListener {
                     isIconified = false
                     requestFocus()
                     post { showKeyboard() }
                 }
 
-                // 닫기(X) 시 리스트 비우기 (잔상 방지)
                 setOnCloseListener {
                     adapter.submitList(emptyList())
                     false
@@ -122,27 +116,50 @@ class HomeFragment : Fragment() {
             }
         }
 
-        // (선택) 초기 로드 — 필요 없다면 주석 처리하세요
+        // (옵션) 초기 데이터
         viewModel.getYakList(Category.Efficacy, "감기")
 
-        // 단 1회 submit + 새 리스트 인스턴스 전달
+        // ✅ 결과 관찰: 리스트 반영 + 제출 후엔 자동 상세 진입 (0건 가드)
         viewModel.yakDataList.observe(viewLifecycleOwner) { list ->
-            adapter.submitList(list?.toList() ?: emptyList())
+            val safe = list?.toList() ?: emptyList()
+            adapter.submitList(safe)
+
+            if (safe.isEmpty()) {
+                navigateOnSubmit = false
+                view?.let { Snackbar.make(it, "해당하는 항목이 없습니다.", Snackbar.LENGTH_SHORT).show() }
+                return@observe
+            }
+
+            if (navigateOnSubmit) {
+                navigateOnSubmit = false
+                val q = cleaned(binding.searchView.query?.toString().orEmpty())
+                val target = safe.firstOrNull {
+                    it.productName?.contains(q, ignoreCase = true) == true
+                } ?: safe.first()
+                openDetail(target)
+            }
         }
 
         return binding.root
     }
 
-    // SearchView의 현재 query를 읽어 검색 호출
-    private fun submitSearch() {
-        val q = binding.searchView.query?.toString()?.trim().orEmpty()
+    private fun submitSearch(navigate: Boolean = false) {
+        val raw = binding.searchView.query?.toString().orEmpty()
+        val q = cleaned(raw)
         if (q.isEmpty()) return
-
         val queryCategory = categoryFrom(binding.chipGroup.checkedChipId)
+        navigateOnSubmit = navigate
         viewModel.getYakList(queryCategory, q)
-
         binding.searchView.hideKeyboard()
         binding.searchView.clearFocus()
+    }
+
+    private fun openDetail(data: YakData) {
+        detailFragment.arguments = Bundle().apply { putParcelable("yak_data", data) }
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, detailFragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun categoryFrom(id: Int): Category {
@@ -156,10 +173,16 @@ class HomeFragment : Fragment() {
             Category.Efficacy     -> "효능으로 검색"
             Category.SideEffects  -> "부작용으로 검색"
             Category.Interactions -> "상호작용으로 검색"
-            else                  -> "키워드로 검색" // ✅ 나머지 분기 커버
+            else                  -> "키워드로 검색"
         }
         binding.searchView.queryHint = hint
     }
+
+    // 검색어 전처리: 앞뒤 공백 제거, 연속 공백 축약, 일부 상표 기호 제거 등
+    private fun cleaned(text: String): String =
+        text.trim()
+            .replace(Regex("\\s+"), " ")
+            .replace(Regex("[®™Ⓡ]"), "")
 
     override fun onDestroyView() {
         super.onDestroyView()
@@ -169,7 +192,7 @@ class HomeFragment : Fragment() {
     // ===== 키보드 헬퍼 =====
     private fun View.hideKeyboard() {
         val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(windowToken, 0)
+        if (windowToken != null) imm.hideSoftInputFromWindow(windowToken, 0)
     }
 
     private fun View.showKeyboard() {

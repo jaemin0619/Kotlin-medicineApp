@@ -6,6 +6,7 @@
     <string name="second_fragment_label">Second Fragment</string>
     <string name="menu_mypage">마이페이지</string>
     <string name="menu_logout">로그아웃</string>
+    <string name="favorite">즐겨찾기</string>
     <string name="next">Next</string>
     <string name="add">추가</string>
     <string name="kakao_native_app_key">b5179c6395c6c6dc6dbc677be8a8a4db</string>

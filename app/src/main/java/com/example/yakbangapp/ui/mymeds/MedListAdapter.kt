@@ -5,8 +5,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.example.yakbangapp.model.MyMed
 import com.example.yakbangapp.databinding.ItemMedBinding
+import com.example.yakbangapp.model.MyMed
 
 class MedListAdapter(
     private val onToggleTaken: (MyMed, Boolean) -> Unit,
@@ -31,6 +31,7 @@ class MedListAdapter(
             cbTakenToday.setOnCheckedChangeListener { _, checked ->
                 onToggleTaken(item, checked)
             }
+
             btnDelete.setOnClickListener { onDelete(item) }
         }
     }
