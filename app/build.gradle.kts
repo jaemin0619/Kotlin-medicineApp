@@ -7,7 +7,12 @@ plugins {
 android {
     namespace = "com.example.yakbangapp"
     compileSdk = 34
-
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            merges += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+        }
+    }
     defaultConfig {
         applicationId = "com.example.yakbangapp"
         minSdk = 29
@@ -81,6 +86,7 @@ dependencies {
 
     // Kakao SDK (v2 - 로그인/사용자)
     implementation("com.kakao.sdk:v2-user:2.20.6")
+    implementation(libs.identity.android.legacy)
 
     // Test
     testImplementation("junit:junit:4.13.2")
