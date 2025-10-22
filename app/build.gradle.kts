@@ -1,18 +1,21 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.jetbrains.kotlin.android)
     id("kotlin-parcelize")
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "com.example.yakbangapp"
     compileSdk = 34
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
             merges += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
         }
     }
+
     defaultConfig {
         applicationId = "com.example.yakbangapp"
         minSdk = 29
@@ -30,9 +33,7 @@ android {
                 "proguard-rules.pro"
             )
         }
-        debug {
-            // buildConfigField("Boolean", "LOG_NETWORK", "true")
-        }
+        debug { }
     }
 
     compileOptions {
@@ -42,16 +43,11 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
-
-    buildFeatures {
-        viewBinding = true
-    }
+    buildFeatures { viewBinding = true }
 
     // 선택
     buildToolsVersion = "34.0.0"
 }
-
-/* ⛔️ 모듈에서는 repositories를 정의하지 않습니다. settings.gradle.kts에만 둡니다. */
 
 dependencies {
     // AndroidX / UI
@@ -66,25 +62,31 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.6")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.6")
 
+    // Room
+    val room_version = "2.6.1"
+    implementation("androidx.room:room-runtime:$room_version")
+    ksp("androidx.room:room-compiler:$room_version")
+    implementation("androidx.room:room-ktx:$room_version")
+
     // Navigation
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.7")
 
-    // DataStore (세션 저장)
+    // DataStore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
-    // 네트워크 — Retrofit 2.11 + Gson 컨버터 + OkHttp 4.12
+    // Retrofit/OkHttp
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
-
-    // Glide (kapt 없이 런타임만)
-    implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
     implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
 
-    // Kakao SDK (v2 - 로그인/사용자)
+    // Glide
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+
+    // Kakao
     implementation("com.kakao.sdk:v2-user:2.20.6")
     implementation(libs.identity.android.legacy)
 
