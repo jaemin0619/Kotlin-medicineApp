@@ -31,18 +31,17 @@ class CameraSearchActivity : AppCompatActivity() {
     private lateinit var shootButton: Button
     private lateinit var processButton: Button
 
-    // nullable 제거: 반드시 openCamera()에서 초기화 후 사용
     private lateinit var photoUri: Uri
     private var savedFile: File? = null
 
-    // 권한 요청
+    // 카메라 권한 요청
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) openCamera() else toast("카메라 권한이 필요합니다.")
     }
 
-    // 카메라 촬영 콜백 (지정한 Uri에 원본 저장)
+    // 카메라 촬영: 지정한 Uri에 저장
     private val takePictureLauncher =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
             if (success) {
@@ -80,42 +79,47 @@ class CameraSearchActivity : AppCompatActivity() {
         }
     }
 
-    /** 카메라 실행: FileProvider로 저장할 Uri를 만들고 TakePicture 실행 */
+    /** 카메라 실행: FileProvider로 저장할 Uri 생성 후 촬영 */
     private fun openCamera() {
         val imageFile = File.createTempFile("capture_", ".jpg", cacheDir)
-
-        // 여기서 non-null Uri 생성 후 프로퍼티 초기화
         photoUri = FileProvider.getUriForFile(
             this,
             "${packageName}.fileprovider",
             imageFile
         )
-
-        // 지정한 Uri에 원본 저장
         takePictureLauncher.launch(photoUri)
     }
 
-    /** 서버 업로드 후 결과 화면으로 이동 */
+    /** 서버 업로드 후 itemName(plain text)을 받아 결과 화면으로 전달 */
     private fun uploadToServer(file: File) {
         lifecycleScope.launch {
             try {
                 val body = file.asRequestBody("image/jpeg".toMediaType())
-                val part = MultipartBody.Part.createFormData("file", file.name, body) // ← 기존
+                // ❗ 서버가 @RequestParam("file") 이므로 파트명은 "file"
+                val part = MultipartBody.Part.createFormData("file", file.name, body)
+
                 val resp = withContext(Dispatchers.IO) {
                     ApiClient.pic.uploadPic(part)
                 }
                 if (!resp.isSuccessful) {
                     val err = resp.errorBody()?.string()
-                    throw RuntimeException("HTTP ${resp.code()} - $err")
+                    throw RuntimeException("HTTP ${resp.code()} - ${err ?: "업로드 실패"}")
                 }
-                val json = resp.body()?.string().orEmpty()
 
+                val itemName = resp.body()?.string()?.trim().orEmpty() // 서버가 반환한 제품명(plain text)
+                if (itemName.isEmpty()) {
+                    toast("서버 응답이 비어 있습니다.")
+                    return@launch
+                }
+
+                // 결과 화면으로 이동 (item_name 전달)
                 startActivity(
                     Intent(this@CameraSearchActivity, RecognitionResultActivity::class.java).apply {
                         putExtra("image_path", file.absolutePath)
-                        putExtra("result_json", json)
+                        putExtra("item_name", itemName) // ✅ 핵심: 제품명으로 직접 검색
                     }
                 )
+
             } catch (e: Exception) {
                 toast("업로드 실패: ${e.message}")
             }
@@ -127,11 +131,10 @@ class CameraSearchActivity : AppCompatActivity() {
 
     /** EXIF 회전 보정 + 다운스케일 후 새 파일 반환 */
     private fun fixRotateAndDownscale(uri: Uri, maxW: Int, maxH: Int, quality: Int): File {
-        // 원본 로드
-        val src = contentResolver.openInputStream(uri)!!.use { BitmapFactory.decodeStream(it) }
+        val src = contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
+            ?: throw IllegalStateException("이미지를 열 수 없습니다.")
 
-        // EXIF 회전값
-        val rotation = contentResolver.openInputStream(uri)!!.use { ins ->
+        val rotation = contentResolver.openInputStream(uri)?.use { ins ->
             val exif = ExifInterface(ins)
             when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
                 ExifInterface.ORIENTATION_ROTATE_90 -> 90f
@@ -139,15 +142,13 @@ class CameraSearchActivity : AppCompatActivity() {
                 ExifInterface.ORIENTATION_ROTATE_270 -> 270f
                 else -> 0f
             }
-        }
+        } ?: 0f
 
-        // 회전 적용
         var bmp: Bitmap = if (rotation != 0f) {
             val m = Matrix().apply { postRotate(rotation) }
             Bitmap.createBitmap(src, 0, 0, src.width, src.height, m, true)
         } else src
 
-        // 다운스케일
         val ratio = minOf(maxW.toFloat() / bmp.width, maxH.toFloat() / bmp.height, 1f)
         if (ratio < 1f) {
             bmp = Bitmap.createScaledBitmap(
@@ -158,7 +159,6 @@ class CameraSearchActivity : AppCompatActivity() {
             )
         }
 
-        // JPEG 저장
         val out = File.createTempFile("fixed_", ".jpg", cacheDir)
         FileOutputStream(out).use { fos ->
             bmp.compress(Bitmap.CompressFormat.JPEG, quality, fos)

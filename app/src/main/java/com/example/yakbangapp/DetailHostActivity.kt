@@ -11,11 +11,9 @@ class DetailHostActivity : AppCompatActivity() {
         setContentView(R.layout.activity_detail_host)
 
         if (savedInstanceState == null) {
-            val yak = intent.getParcelableExtra<YakData>("yak") ?: return
+            val yak = intent.getParcelableExtra<YakData>("yak") ?: run { finish(); return }
             val fragment = DetailFragment().apply {
-                arguments = Bundle().apply {
-                    putParcelable("yak_data", yak)
-                }
+                arguments = Bundle().apply { putParcelable("yak", yak) }
             }
             supportFragmentManager.beginTransaction()
                 .replace(R.id.detail_container, fragment)
@@ -23,3 +21,4 @@ class DetailHostActivity : AppCompatActivity() {
         }
     }
 }
+

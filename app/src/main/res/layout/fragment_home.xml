@@ -54,8 +54,8 @@
             android:id="@+id/yak_deco_1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="88dp"
-            android:layout_marginBottom="40dp"
+            android:layout_marginStart="148dp"
+            android:layout_marginBottom="20dp"
             android:src="@drawable/ic_dia"
             app:layout_constraintBottom_toTopOf="@id/main_big_icon"
             app:layout_constraintStart_toStartOf="parent" />

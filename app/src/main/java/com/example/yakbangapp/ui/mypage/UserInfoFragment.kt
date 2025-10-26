@@ -62,16 +62,25 @@ class UserInfoFragment : Fragment() {
     }
 
     private fun renderProfile(p: UserProfile) {
-        binding.tvName.text = if (p.name.isEmpty()) "로그인이 필요합니다" else p.name
-        binding.tvEmail.text = p.email
-        binding.tvProvider.text = if (p.provider.isEmpty()) "연결된 계정 없음" else "연결: ${p.provider}"
+        val loggedIn = p.id.isNotEmpty()
 
-        if (p.avatarUrl.isNotEmpty()) {
+        // 이름 표시: 로그인됐으면 실제 이름, 아니면 안내 문구
+        binding.tvName.text = if (loggedIn) (p.name.ifEmpty { "이름 미설정" }) else "로그인이 필요합니다"
+        binding.tvEmail.text = if (loggedIn) p.email else ""
+        binding.tvProvider.text = if (loggedIn) "연결: ${p.provider}" else "연결된 계정 없음"
+
+        // 프로필 이미지
+        if (loggedIn && p.avatarUrl.isNotEmpty()) {
             Glide.with(this).load(p.avatarUrl).circleCrop().into(binding.ivProfile)
         } else {
             binding.ivProfile.setImageResource(com.example.yakbangapp.R.drawable.ic_person)
         }
+
+        // 버튼 가시성 토글
+        binding.btnConnectKakao.visibility   = if (loggedIn) View.GONE else View.VISIBLE
+        binding.btnDisconnect.visibility     = if (loggedIn && p.provider == "kakao") View.VISIBLE else View.GONE
     }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

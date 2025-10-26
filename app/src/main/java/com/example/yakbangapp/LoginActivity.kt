@@ -75,7 +75,7 @@ class LoginActivity : AppCompatActivity() {
                 session.saveKakaoTokens(
                     accessToken = oauth.accessToken,
                     refreshToken = oauth.refreshToken.orEmpty(),
-                    expiresAt = oauth.accessTokenExpiresAt?.time ?: 0L
+                    expiresAtEpochMillis = oauth.accessTokenExpiresAt?.time ?: 0L  // ← 이름 맞춤
                 )
 
                 // 2) 중복 네비 차단
@@ -90,4 +90,5 @@ class LoginActivity : AppCompatActivity() {
             }
         }
     }
+
 }

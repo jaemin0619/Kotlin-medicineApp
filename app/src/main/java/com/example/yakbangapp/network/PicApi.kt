@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit
 interface PicApi{
     @Multipart
     @POST("api/getPic")
-    suspend fun uploadPic(@Part image: MultipartBody.Part): Response<ResponseBody>
+    suspend fun uploadPic(@Part file: MultipartBody.Part): Response<ResponseBody>
     // 서버가 "file"을 요구하면 createFormData("file", ...)로만 바꾸면 됨.
 }
 
