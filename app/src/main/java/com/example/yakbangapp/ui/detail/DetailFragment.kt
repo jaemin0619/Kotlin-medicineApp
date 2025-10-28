@@ -1,11 +1,13 @@
 package com.example.yakbangapp.ui.detail
 
 import android.os.Bundle
+import android.text.method.LinkMovementMethod
 import android.text.method.ScrollingMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.text.HtmlCompat
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.bumptech.glide.Glide
@@ -23,7 +25,10 @@ class DetailFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        yakData = arguments?.getParcelable("yak_data")
+        // "yak" (권장) 또는 "yak_data" (하위 호환) 키 모두 지원
+        yakData = arguments?.getParcelable("yak")
+            ?: arguments?.getParcelable("yak_data")
+                    ?: activity?.intent?.getParcelableExtra("yak")
     }
 
     override fun onCreateView(
@@ -38,8 +43,9 @@ class DetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 상단 카드 바인딩 (null-safe)
         val data = yakData
+
+        // 상단 카드
         binding.yakNameTv.text = data?.productName.orEmpty()
         binding.yakCode.text = data?.productCode.orEmpty()
         binding.yakVendor.text = data?.companyName.orEmpty()
@@ -57,10 +63,10 @@ class DetailFragment : Fragment() {
         }
 
         binding.backButton.setOnClickListener {
-            parentFragmentManager.popBackStack()
+            requireActivity().onBackPressedDispatcher.onBackPressed()
         }
 
-        // 탭/페이지 데이터
+        // 탭/페이지 데이터 (문자열은 HTML 그대로 전달)
         val pages = listOf(
             DetailPage("효능", data?.efficacy.orEmpty()),
             DetailPage("상호작용", data?.interactions.orEmpty()),
@@ -69,6 +75,7 @@ class DetailFragment : Fragment() {
         )
 
         binding.viewPager.adapter = DetailPagerAdapter(this, pages)
+        binding.viewPager.offscreenPageLimit = pages.size
 
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, pos ->
             tab.text = pages[pos].title
@@ -93,27 +100,31 @@ private class DetailPagerAdapter(
 }
 
 class DetailTextFragment : Fragment() {
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // 간단한 스크롤 가능한 TextView
+        val raw = arguments?.getString(ARG_TEXT).orEmpty()
+        val spanned = HtmlCompat.fromHtml(raw, HtmlCompat.FROM_HTML_MODE_LEGACY)
+
         return TextView(requireContext()).apply {
             id = View.generateViewId()
             setTextColor(0xFF323537.toInt())
             textSize = 15f
             setPadding(32, 24, 32, 24)
+            // 스크롤 + 링크 클릭 가능
             movementMethod = ScrollingMovementMethod()
-            // ⚠️ zero-length span 방지: 빈 문자열은 그대로 setText("")
-            text = arguments?.getString(ARG_TEXT).orEmpty()
+            movementMethod = LinkMovementMethod.getInstance()
+            text = spanned
         }
     }
 
     companion object {
         private const val ARG_TEXT = "text"
         fun newInstance(text: String) = DetailTextFragment().apply {
-            arguments = Bundle().apply { putString(ARG_TEXT, text ?: "") }
+            arguments = Bundle().apply { putString(ARG_TEXT, text) }
         }
     }
 }
