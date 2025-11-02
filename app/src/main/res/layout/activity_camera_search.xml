@@ -1,6 +1,9 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:padding="16dp"
-    android:layout_width="match_parent" android:layout_height="match_parent">
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center_horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <ImageView
         android:id="@+id/preview_image"
@@ -8,17 +11,32 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:scaleType="centerCrop"
-        android:background="#222"/>
+        android:background="#222"
+        android:layout_marginBottom="16dp" />
 
     <Button
         android:id="@+id/button_shoot"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="사진 촬영"/>
+        android:layout_height="50dp"
+        android:backgroundTint="#4CAF50"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:text="📷  사진 촬영"
+        android:layout_marginBottom="12dp"
+        android:padding="8dp"
+        android:stateListAnimator="@null"
+        android:fontFamily="sans-serif-medium" />
 
     <Button
         android:id="@+id/button_process"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="서버로 업로드"/>
+        android:layout_height="50dp"
+        android:backgroundTint="#2196F3"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:text="⬆️  서버로 업로드"
+        android:padding="8dp"
+        android:stateListAnimator="@null"
+        android:fontFamily="sans-serif-medium" />
+
 </LinearLayout>

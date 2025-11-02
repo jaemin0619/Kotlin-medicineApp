@@ -1,46 +1,61 @@
 package com.example.yakbangapp.ui.mypage
 
 import android.content.Context
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
+import com.example.yakbangapp.auth.AuthState
 import com.example.yakbangapp.auth.UserProfile
 import com.example.yakbangapp.auth.UserSession
 import com.kakao.sdk.user.UserApiClient
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MyPageViewModel : ViewModel() {
 
-    private val _profile = MutableLiveData<UserProfile>()
-    val profile: LiveData<UserProfile> = _profile
+    private var session: UserSession? = null
 
-    /** Activity에서 호출해 DataStore를 observe하도록 초기화 */
+    private lateinit var _profile: LiveData<UserProfile>
+    val profile: LiveData<UserProfile> get() = _profile
+
+    private lateinit var _auth: LiveData<AuthState>
+    val auth: LiveData<AuthState> get() = _auth
+
     fun bindSession(context: Context) {
-        val session = UserSession(context)
-        // 프로필
-        viewModelScope.launch {
-            session.profileFlow.collect { p -> _profile.postValue(p) }
-        }
+        if (session != null) return
+        val s = UserSession(context.applicationContext)
+        session = s
+        _profile = s.profileFlow.asLiveData()
+        _auth = s.authStateFlow.asLiveData()
     }
 
     /**
-     * 버튼 클릭 시 동작:
-     * - 로그인 상태면 → 로그아웃 시도(Kakao + 세션 clear)
-     * - 로그아웃 상태면 → 로그인 화면으로 이동 요청 콜백(goLogin = true)
+     * 로그인 상태에 따라:
+     *  - 비로그인 → 로그인 화면으로 이동 요청 (goLogin = true)
+     *  - 로그인 상태 → (선택) Kakao 로그아웃 + 세션 정리 (goLogin = false)
      */
-    fun onLoginOrLogout(context: Context, goLoginCallback: (Boolean) -> Unit) {
-        val session = UserSession(context)
-        // 현재 로그인 여부(한 번 조회)
-        viewModelScope.launch {
-            val token = session.kakaoAccessTokenOnce()
-            val loggedIn = !token.isNullOrBlank()
+    fun onLoginOrLogout(context: Context, after: (goLogin: Boolean) -> Unit) {
+        val s = session ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            val loggedIn = s.isLoggedInOnce()
             if (loggedIn) {
-                // Kakao 로그아웃 + 세션 clear
-                UserApiClient.instance.logout { _ ->
-                    viewModelScope.launch {
-                        session.clear()
+                // 1) Kakao SDK 로그아웃 (토큰 무효화) — 선택사항이지만 보통 같이 해주는 게 안전
+                try {
+                    withContext(Dispatchers.Main) {
+                        UserApiClient.instance.logout { /* err ->
+                            // 필요 시 err 로깅
+                        */ }
                     }
-                }
+                } catch (_: Throwable) { /* SDK 미초기화 등 무시 */ }
+
+                // 2) 로컬 세션 정리 (프로필 + 토큰 제거)
+                s.signOut()
+
+                after(false)
             } else {
-                goLoginCallback(true)
+                after(true)
             }
         }
     }

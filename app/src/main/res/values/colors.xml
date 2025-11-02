@@ -2,4 +2,11 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="bubbleUserStart">#22D3EE</color>   <!-- 시안 -->
+    <color name="bubbleUserEnd">#60A5FA</color>    <!-- 블루 -->
+    <color name="bubbleBotBg">?attr/colorSurface</color>
+    <color name="bubbleBotStroke">?attr/colorOutline</color>
+    <color name="sendFabBgStart">#60A5FA</color>
+    <color name="sendFabBgEnd">#22D3EE</color>
+
 </resources>
