@@ -7,12 +7,14 @@ plugins {
 android {
     namespace = "com.example.yakbangapp"
     compileSdk = 34
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
             merges += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
         }
     }
+
     defaultConfig {
         applicationId = "com.example.yakbangapp"
         minSdk = 29
@@ -81,8 +83,6 @@ dependencies {
 
     // Glide (kapt 없이 런타임만)
     implementation("com.github.bumptech.glide:glide:4.16.0")
-    implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
-    implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
 
     // Kakao SDK (v2 - 로그인/사용자)
     implementation("com.kakao.sdk:v2-user:2.20.6")

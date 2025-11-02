@@ -15,25 +15,39 @@ class AiChatViewModel : ViewModel() {
     private val _messages = MutableLiveData<List<ChatItem>>(emptyList())
     val messages: LiveData<List<ChatItem>> = _messages
 
-    fun send(userText: String) {
-        if (userText.isBlank()) return
+    private fun append(item: ChatItem) {
+        val cur = _messages.value.orEmpty()
+        _messages.value = cur + item
+    }
 
-        val userMsg = ChatItem(nextId++, userText.trim(), isUser = true)
-        _messages.value = _messages.value.orEmpty() + userMsg
+    fun send(userText: String) {
+        val text = userText.trim()
+        if (text.isBlank()) return
+
+        val userMsg = ChatItem(nextId++, text, isUser = true)
+        append(userMsg)
+
+        // (선택) 타이핑 표시용 플레이스홀더
+        val typingId = nextId++
+        append(ChatItem(typingId, "…", isUser = false))
 
         viewModelScope.launch {
             try {
-                val resp = ApiClient.api.chat(ChatRequest(userText.trim()))
+                val resp = ApiClient.api.chat(ChatRequest(text))
                 val reply = if (resp.isSuccessful) {
                     resp.body()?.response?.takeIf { it.isNotBlank() } ?: "응답이 비어 있습니다."
                 } else {
-                    "오류: ${resp.code()} - ${resp.errorBody()?.string().orEmpty()}"
+                    val errBody = resp.errorBody()?.string().orEmpty()
+                    "오류: ${resp.code()} - $errBody"
                 }
-                val botMsg = ChatItem(nextId++, reply, isUser = false)
-                _messages.postValue(_messages.value.orEmpty() + botMsg)
+                // 타이핑 메시지 교체
+                _messages.value = _messages.value.orEmpty().map {
+                    if (it.id == typingId) it.copy(text = reply) else it
+                }
             } catch (e: Exception) {
-                val err = ChatItem(nextId++, "네트워크 오류: ${e.message}", isUser = false)
-                _messages.postValue(_messages.value.orEmpty() + err)
+                _messages.value = _messages.value.orEmpty().map {
+                    if (it.id == typingId) it.copy(text = "네트워크 오류: ${e.message}") else it
+                }
             }
         }
     }
